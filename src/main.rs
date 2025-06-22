@@ -1,6 +1,6 @@
 use simple_logger::SimpleLogger;
 
-use ray_tracer::{file_utils::create_and_write_to_file, test_lib::create_test_image};
+use ray_tracer::test_lib::create_test_image;
 
 fn main() {
     SimpleLogger::new().init().unwrap();
