@@ -1,4 +1,5 @@
 use crate::file_utils::create_and_write_to_file;
+use crate::image_utils::{write_colour, Colour};
 
 pub fn create_test_image() {
     let w = 256;
@@ -8,16 +9,9 @@ pub fn create_test_image() {
     for j in 0..h {
         log::debug!("Scanlines remaining: {}", h - j);
         for i in 0..w {
-            let r = i as f64 / (w - 1) as f64;
-            let g = j as f64 / (h - 1) as f64;
-            // let b = ((i+j) as f64/2 as f64) / ((h+w)/2 - 1) as f64;
-            let b = 0;
+           let colour = Colour::from_vals(i as f64/(w-1) as f64, j as f64/(h-1) as f64, 0.0);
 
-            let r = (r * 255.99).floor() as u8;
-            let g = (g * 255.99).floor() as u8;
-            // let b = (b * 255.99).floor() as u8;
-
-            content += format!("{r} {g} {b} ").as_str();
+            content += write_colour(&colour).as_str();
         }
         content += "\n";
     }
