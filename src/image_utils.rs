@@ -1,12 +1,14 @@
+pub mod colour;
+pub mod ray;
 
-use crate::math::vec3::Vec3;
+pub fn calculate_viewport(aspect_ratio: f64, image_width: u32) -> (f64, f64) {
+    let image_height = if image_width as f64 > aspect_ratio {
+        (image_width as f64 / aspect_ratio).floor() as u32
+    } else {
+        1
+    };
 
-pub type Colour = Vec3;
-
-pub fn write_colour(colour: &Colour) -> String {
-    let r = (colour.x() * 255.99).floor() as u8;
-    let g = (colour.y() * 255.99).floor() as u8;
-    let b = (colour.z() * 255.99).floor() as u8;
-
-    format!("{r} {g} {b}\n")
+    let viewport_height = 2.0;
+    let viewport_width = viewport_height * (image_width as f64 / image_height as f64);
+    (viewport_height, viewport_width)
 }

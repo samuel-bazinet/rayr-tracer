@@ -1,15 +1,28 @@
 use crate::file_utils::create_and_write_to_file;
-use crate::image_utils::{write_colour, Colour};
+use crate::image_utils::{
+    colour::write_colour,
+    ray::{Ray, ray_color},
+};
+use crate::math::vec3::{Point3, Vec3};
 
-pub fn create_test_image() {
-    let w = 256;
-    let h = 256;
-
+pub fn create_test_image(
+    w: u32,
+    h: u32,
+    pixel00_loc: &Vec3,
+    pixel_delta_u: &Vec3,
+    pixel_delta_v: &Vec3,
+    camera_center: &Point3,
+) {
     let mut content = format!("P3\n{w} {h}\n255\n");
     for j in 0..h {
         log::debug!("Scanlines remaining: {}", h - j);
         for i in 0..w {
-           let colour = Colour::from_vals(i as f64/(w-1) as f64, j as f64/(h-1) as f64, 0.0);
+            let pixel_center =
+                *pixel00_loc + (pixel_delta_u * i as f64) + (pixel_delta_v * j as f64);
+            let ray_direction = pixel_center - *camera_center;
+            let ray = Ray::from(camera_center, &ray_direction);
+
+            let colour = ray_color(&ray);
 
             content += write_colour(&colour).as_str();
         }

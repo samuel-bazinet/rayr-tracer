@@ -31,6 +31,19 @@ impl Add for Vec3 {
     }
 }
 
+impl Add for &Vec3 {
+    type Output = Vec3;
+    fn add(self, rhs: Self) -> Self::Output {
+        Self::Output {
+            e: [
+                self.e[0] + rhs.e[0],
+                self.e[1] + rhs.e[1],
+                self.e[2] + rhs.e[2],
+            ],
+        }
+    }
+}
+
 impl Add<f64> for Vec3 {
     type Output = Self;
 
@@ -71,6 +84,15 @@ impl Mul<f64> for Vec3 {
     type Output = Self;
     fn mul(self, rhs: f64) -> Self::Output {
         Self {
+            e: [self.e[0] * rhs, self.e[1] * rhs, self.e[2] * rhs],
+        }
+    }
+}
+
+impl Mul<f64> for &Vec3 {
+    type Output = Vec3;
+    fn mul(self, rhs: f64) -> Self::Output {
+        Self::Output {
             e: [self.e[0] * rhs, self.e[1] * rhs, self.e[2] * rhs],
         }
     }
