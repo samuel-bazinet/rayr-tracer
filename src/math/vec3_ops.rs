@@ -67,6 +67,45 @@ impl Sub for Vec3 {
     }
 }
 
+impl Sub for &Vec3 {
+    type Output = Vec3;
+    fn sub(self, rhs: Self) -> Self::Output {
+        Self::Output {
+            e: [
+                self.e[0] - rhs.e[0],
+                self.e[1] - rhs.e[1],
+                self.e[2] - rhs.e[2],
+            ],
+        }
+    }
+}
+
+impl Sub<Vec3> for &Vec3 {
+    type Output = Vec3;
+    fn sub(self, rhs: Vec3) -> Self::Output {
+        Self::Output {
+            e: [
+                self.e[0] - rhs.e[0],
+                self.e[1] - rhs.e[1],
+                self.e[2] - rhs.e[2],
+            ],
+        }
+    }
+}
+
+impl Sub<&Vec3> for Vec3 {
+    type Output = Vec3;
+    fn sub(self, rhs: &Vec3) -> Self::Output {
+        Self::Output {
+            e: [
+                self.e[0] - rhs.e[0],
+                self.e[1] - rhs.e[1],
+                self.e[2] - rhs.e[2],
+            ],
+        }
+    }
+}
+
 impl Mul for Vec3 {
     type Output = Self;
     fn mul(self, rhs: Self) -> Self::Output {

@@ -38,5 +38,12 @@ fn main() {
 
     let pixel00_loc = viewport_upper_left + (pixel_delta_u + pixel_delta_v) * 0.5;
 
-    create_test_image(image_width, image_height, &pixel00_loc, &pixel_delta_u, &pixel_delta_v, &camera_center);
+    create_test_image(
+        image_width,
+        image_height,
+        &pixel00_loc,
+        &pixel_delta_u,
+        &pixel_delta_v,
+        &camera_center,
+    );
 }
