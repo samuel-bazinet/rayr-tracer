@@ -12,7 +12,7 @@ impl Vec3 {
         Self { e: [0f64; 3] }
     }
 
-    pub fn from_vals(e0: f64, e1: f64, e2: f64) -> Self {
+    pub fn from(e0: f64, e1: f64, e2: f64) -> Self {
         Self { e: [e0, e1, e2] }
     }
 

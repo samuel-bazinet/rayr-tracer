@@ -1,4 +1,5 @@
 use crate::file_utils::create_and_write_to_file;
+use crate::image_utils::hittable_list::HittableList;
 use crate::image_utils::{
     colour::write_colour,
     ray::{Ray, ray_color},
@@ -12,6 +13,7 @@ pub fn create_test_image(
     pixel_delta_u: &Vec3,
     pixel_delta_v: &Vec3,
     camera_center: &Point3,
+    world: &HittableList,
 ) {
     let mut content = format!("P3\n{w} {h}\n255\n");
     for j in 0..h {
@@ -22,7 +24,7 @@ pub fn create_test_image(
             let ray_direction = pixel_center - *camera_center;
             let ray = Ray::from(camera_center, &ray_direction);
 
-            let colour = ray_color(&ray);
+            let colour = ray_color(&ray, world);
 
             content += write_colour(&colour).as_str();
         }

@@ -3,6 +3,7 @@ use ray::Ray;
 
 pub mod colour;
 pub mod hittable;
+pub mod hittable_list;
 pub mod ray;
 
 pub fn calculate_viewport(aspect_ratio: f64, image_width: u32) -> (f64, f64) {
