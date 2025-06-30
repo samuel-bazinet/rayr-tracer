@@ -1,4 +1,4 @@
-use std::ops::{Add, Div, DivAssign, Mul, MulAssign, Sub};
+use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Sub};
 
 use super::vec3::Vec3;
 
@@ -51,6 +51,14 @@ impl Add<f64> for Vec3 {
         Self {
             e: [self.e[0] + rhs, self.e[1] + rhs, self.e[2] + rhs],
         }
+    }
+}
+
+impl AddAssign for Vec3 {
+    fn add_assign(&mut self, rhs: Self) {
+        self.e[0] += rhs.e[0];
+        self.e[1] += rhs.e[1];
+        self.e[2] += rhs.e[2];
     }
 }
 

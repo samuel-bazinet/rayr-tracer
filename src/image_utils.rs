@@ -1,6 +1,7 @@
 use crate::math::{vec3::Point3, vec3_ops::dot};
 use ray::Ray;
 
+pub mod camera;
 pub mod colour;
 pub mod hittable;
 pub mod hittable_list;

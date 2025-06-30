@@ -1,5 +1,5 @@
 use crate::{
-    constants::INFINITY,
+    math::utils::INFINITY,
     image_utils::{
         colour::Colour,
         hittable::{HitRecord, Hittable},
@@ -62,6 +62,6 @@ pub fn ray_color(ray: &Ray, world: &HittableList) -> Colour {
     }
 }
 
-fn blended_value(a: f64, start_value: Colour, end_value: Colour) -> Colour {
+pub fn blended_value(a: f64, start_value: Colour, end_value: Colour) -> Colour {
     start_value * (1.0 - a) + end_value * a
 }
