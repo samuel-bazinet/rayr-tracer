@@ -1,14 +1,18 @@
+use std::{
+    fs::File,
+    io::{BufWriter, Write},
+};
+
 use crate::{
-    math::utils::{INFINITY, random_f64},
-    file_utils::create_and_write_to_file,
     image_utils::{
         calculate_viewport,
         colour::{Colour, write_colour},
         hittable::{HitRecord, Hittable},
-        ray::{Ray, blended_value},
+        ray::Ray,
     },
     math::{
         interval::Interval,
+        utils::{INFINITY, random_f64},
         vec3::{Point3, Vec3},
         vec3_ops::unit_vector,
     },
@@ -18,6 +22,7 @@ pub struct Camera {
     pub aspect_ratio: f64,
     pub image_width: u32,
     pub samples_per_pixel: u32,
+    pub max_depth: u32,
     image_height: u32,
     pixel_sample_scale: f64,
     center: Point3,
@@ -32,6 +37,7 @@ impl Camera {
             aspect_ratio: 1.0,
             image_width: 100,
             samples_per_pixel: 10,
+            max_depth: 10,
             image_height: 0,
             pixel_sample_scale: 1.0,
             center: Point3::default(),
@@ -44,21 +50,33 @@ impl Camera {
     pub fn render(&mut self, world: &impl Hittable) {
         self.initialize();
 
-        let mut content = format!("P3\n{} {}\n255\n", self.image_width, self.image_height);
+        let file_name = "test_a.ppm";
+        log::info!("Creating {file_name}");
+        let file = File::create(file_name).expect("Could not write file");
+        let mut file = BufWriter::new(file);
+        file.write_all(format!("P6\n{} {}\n255\n", self.image_width, self.image_height).as_bytes())
+            .expect("Could not write header");
+        let mut buffer = vec![0; (self.image_height as usize * self.image_width as usize + 3) * 3];
+
         for j in 0..self.image_height {
             log::debug!("Scanlines remaining: {}", self.image_height - j);
+            let b_h = j * self.image_width * 3;
             for i in 0..self.image_width {
                 let mut pixel_colour = Colour::default();
                 for _ in 0..self.samples_per_pixel {
                     let ray = self.get_ray(i, j);
-                    pixel_colour += ray_color(&ray, world);
+                    pixel_colour += ray_color(&ray, self.max_depth, world);
                 }
 
-                content += write_colour(&(pixel_colour * self.pixel_sample_scale)).as_str();
+                let b_slice = b_h as usize + i as usize * 3;
+                let b_slice = &mut buffer[b_slice..b_slice + 3 * 3];
+                write_colour(&(pixel_colour * self.pixel_sample_scale), b_slice);
             }
-            content += "\n";
         }
-        create_and_write_to_file("test_a.ppm", content.as_str()).expect("Could not create file");
+
+        file.write_all(buffer.as_slice())
+            .expect("Could not write buffer to file");
+
         log::info!("Done!");
     }
 
@@ -100,15 +118,29 @@ impl Camera {
     }
 }
 
-fn ray_color(ray: &Ray, world: &impl Hittable) -> Colour {
+fn ray_color(ray: &Ray, depth: u32, world: &impl Hittable) -> Colour {
+    if depth == 0 {
+        return Colour::default();
+    }
+
     let mut rec = HitRecord::default();
-    if world.hit(ray, &Interval::from(0.0, INFINITY), &mut rec) {
-        return (rec.normal + Colour::from(1.0, 1.0, 1.0)) * 0.5;
+
+    if world.hit(ray, &Interval::from(0.001, INFINITY), &mut rec) {
+        let mut scattered = Ray::default();
+        let mut attenuation = Colour::default();
+        if rec.mat.scatter(ray, &rec, &mut attenuation, &mut scattered) {
+            return ray_color(&scattered, depth - 1, world) * attenuation;
+        }
+        return Colour::default();
     }
 
     let unit_direction = unit_vector(ray.direction());
     let a = (unit_direction.y() + 1.0) * 0.5;
     blended_value(a, Colour::from(1.0, 1.0, 1.0), Colour::from(0.5, 0.7, 1.0))
+}
+
+pub fn blended_value(a: f64, start_value: Colour, end_value: Colour) -> Colour {
+    start_value * (1.0 - a) + end_value * a
 }
 
 fn sample_square() -> Vec3 {

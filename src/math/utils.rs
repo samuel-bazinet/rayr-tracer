@@ -11,6 +11,6 @@ pub fn random_f64() -> f64 {
     rand::rng().random_range(0.0..1.0)
 }
 
-pub fn random_f64_boudned(min: f64, max: f64) -> f64 {
+pub fn random_f64_bounded(min: f64, max: f64) -> f64 {
     rand::rng().random_range(min..max)
 }

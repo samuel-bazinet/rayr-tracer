@@ -1,5 +1,7 @@
 use std::fmt::Display;
 
+use crate::math::utils::{random_f64, random_f64_bounded};
+
 #[derive(Clone, Copy, Debug)]
 pub struct Vec3 {
     pub e: [f64; 3],
@@ -16,6 +18,22 @@ impl Vec3 {
         Self { e: [e0, e1, e2] }
     }
 
+    pub fn random() -> Self {
+        Self {
+            e: [random_f64(), random_f64(), random_f64()],
+        }
+    }
+
+    pub fn random_bounded(min: f64, max: f64) -> Self {
+        Self {
+            e: [
+                random_f64_bounded(min, max),
+                random_f64_bounded(min, max),
+                random_f64_bounded(min, max),
+            ],
+        }
+    }
+
     pub fn x(&self) -> f64 {
         self.e[0]
     }
@@ -28,10 +46,10 @@ impl Vec3 {
         self.e[2]
     }
 
-    pub fn negate(&mut self) {
-        self.e[0] = -self.e[0];
-        self.e[1] = -self.e[1];
-        self.e[2] = -self.e[2];
+    pub fn negate(&self) -> Self {
+        Self {
+            e: [-self.e[0], -self.e[1], -self.e[2]],
+        }
     }
 
     pub fn get_element(&self, index: usize) -> f64 {
@@ -47,7 +65,12 @@ impl Vec3 {
     }
 
     pub fn length(&self) -> f64 {
-        f64::sqrt(self.length_squared())
+        self.length_squared().sqrt()
+    }
+
+    pub fn near_zero(&self) -> bool {
+        let s = 1e-8;
+        self.e[0].abs() < s && self.e[1].abs() < s && self.e[2].abs() < s
     }
 }
 
