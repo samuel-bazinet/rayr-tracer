@@ -1,5 +1,7 @@
 use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Sub};
 
+use crate::math::utils::random_f64_bounded;
+
 use super::vec3::Vec3;
 
 pub fn dot(u: &Vec3, v: &Vec3) -> f64 {
@@ -24,6 +26,19 @@ pub fn random_unit_vector() -> Vec3 {
         let lensq = p.length_squared();
         if 1e-160 < lensq && lensq <= 1.0 {
             break p / lensq.sqrt();
+        }
+    }
+}
+
+pub fn random_in_unit_disk() -> Vec3 {
+    loop {
+        let p = Vec3::from(
+            random_f64_bounded(-1.0, 1.0),
+            random_f64_bounded(-1.0, 1.0),
+            0.0,
+        );
+        if p.length_squared() < 1.0 {
+            break p;
         }
     }
 }
@@ -140,6 +155,15 @@ impl Sub<&Vec3> for Vec3 {
                 self.e[1] - rhs.e[1],
                 self.e[2] - rhs.e[2],
             ],
+        }
+    }
+}
+
+impl Mul<Vec3> for f64 {
+    type Output = Vec3;
+    fn mul(self, rhs: Vec3) -> Self::Output {
+        Self::Output {
+            e: [self * rhs.e[0], self * rhs.e[1], self * rhs.e[2]],
         }
     }
 }
