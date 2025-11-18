@@ -1,4 +1,4 @@
-use std::rc::Rc;
+use std::{rc::Rc, time::SystemTime};
 
 use simple_logger::SimpleLogger;
 
@@ -21,15 +21,16 @@ fn main() {
     SimpleLogger::new().init().unwrap();
 
     log::info!("Starting up");
+    let now = SystemTime::now();
 
     let world = _create_book_cover();
 
     let mut cam = Camera::new();
 
     cam.aspect_ratio = 16.0 / 9.0;
-    cam.image_width = 1200;
-    cam.samples_per_pixel = 500;
-    cam.max_depth = 50;
+    cam.image_width = 2560;
+    cam.samples_per_pixel = 100;
+    cam.max_depth = 10;
 
     cam.vfov = 20.0;
     cam.lookfrom = Point3::from(13.0, 2.0, 3.0);
@@ -40,6 +41,8 @@ fn main() {
     cam.focus_dist = 10.0;
 
     cam.render(&world);
+
+    log::info!("Done in {} seconds!", now.elapsed().unwrap().as_secs());
 }
 
 fn _create_world_1() -> HittableList {

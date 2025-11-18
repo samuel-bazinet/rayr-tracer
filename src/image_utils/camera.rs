@@ -74,40 +74,47 @@ impl Camera {
     pub fn render(&mut self, world: &impl Hittable) {
         self.initialize();
 
-        let file_name = "test_a.ppm";
-        log::info!("Creating {file_name}");
-        let file = File::create(file_name).expect("Could not write file");
-        let mut file = BufWriter::new(file);
-        file.write_all(format!("P6\n{} {}\n255\n", self.image_width, self.image_height).as_bytes())
-            .expect("Could not write header");
         let mut buffer = vec![0; (self.image_height as usize * self.image_width as usize + 3) * 3];
+        self.calculate_pixels(world, &mut buffer);
 
+        self.write_to_file(buffer);
+    }
+
+    fn calculate_pixels(&mut self, world: &impl Hittable, buffer: &mut Vec<u8>) {
+        
         for j in 0..self.image_height {
             log::debug!(
                 "Scanlines remaining: {}/{}",
                 self.image_height - j,
                 self.image_height
             );
-            let b_h = j * self.image_width * 3;
             for i in 0..self.image_width {
                 let mut pixel_colour = Colour::default();
                 for _ in 0..self.samples_per_pixel {
                     let ray = self.get_ray(i, j);
                     pixel_colour += ray_color(&ray, self.max_depth, world);
                 }
-
+    
+                let b_h = j * self.image_width * 3;
                 let b_slice = b_h as usize + i as usize * 3;
                 let b_slice = &mut buffer[b_slice..b_slice + 3 * 3];
                 write_colour(&(pixel_colour * self.pixel_sample_scale), b_slice);
             }
         }
-
-        file.write_all(buffer.as_slice())
-            .expect("Could not write buffer to file");
-
-        log::info!("Done!");
     }
 
+    fn write_to_file(&mut self, buffer: Vec<u8>) {
+        let file_name = "test_a.ppm";
+        log::info!("Creating {file_name}");
+        let file = File::create(file_name).expect("Could not write file");
+        let mut file = BufWriter::new(file);
+        file.write_all(format!("P6\n{} {}\n255\n", self.image_width, self.image_height).as_bytes())
+            .expect("Could not write header");
+        file.write_all(buffer.as_slice())
+            .expect("Could not write buffer to file");
+    }
+    
+    
     fn initialize(&mut self) {
         self.image_height = if self.image_width as f64 > self.aspect_ratio {
             (self.image_width as f64 / self.aspect_ratio) as u32

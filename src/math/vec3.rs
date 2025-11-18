@@ -9,6 +9,8 @@ pub struct Vec3 {
 
 pub type Point3 = Vec3;
 
+const S: f64 = 1e-8;
+
 impl Vec3 {
     pub fn new() -> Self {
         Self { e: [0f64; 3] }
@@ -69,8 +71,7 @@ impl Vec3 {
     }
 
     pub fn near_zero(&self) -> bool {
-        let s = 1e-8;
-        self.e[0].abs() < s && self.e[1].abs() < s && self.e[2].abs() < s
+        self.e[0].abs() < S && self.e[1].abs() < S && self.e[2].abs() < S
     }
 }
 
