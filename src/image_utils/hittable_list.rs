@@ -5,11 +5,11 @@ use super::{
     ray::Ray,
 };
 
-use std::rc::Rc;
+use std::sync::Arc;
 
 #[derive(Default)]
 pub struct HittableList {
-    pub objects: Vec<Rc<dyn Hittable>>,
+    pub objects: Vec<Arc<dyn Hittable>>,
 }
 
 impl HittableList {
@@ -17,7 +17,7 @@ impl HittableList {
         Self { objects: vec![] }
     }
 
-    pub fn from_hittable(object: &Rc<dyn Hittable>) -> Self {
+    pub fn from_hittable(object: &Arc<dyn Hittable>) -> Self {
         Self {
             objects: vec![object.clone()],
         }
@@ -27,7 +27,7 @@ impl HittableList {
         self.objects.clear();
     }
 
-    pub fn add(&mut self, object: &Rc<dyn Hittable>) {
+    pub fn add(&mut self, object: &Arc<dyn Hittable>) {
         self.objects.push(object.clone());
     }
 }

@@ -1,4 +1,4 @@
-use std::rc::Rc;
+use std::sync::Arc;
 
 use crate::{
     image_utils::{
@@ -16,7 +16,7 @@ use crate::{
 pub struct HitRecord {
     pub p: Point3,
     pub normal: Vec3,
-    pub mat: Rc<dyn Material>,
+    pub mat: Arc<dyn Material>,
     pub t: f64,
     pub front_face: bool,
 }
@@ -37,13 +37,13 @@ impl Default for HitRecord {
         Self {
             p: Point3::default(),
             normal: Vec3::default(),
-            mat: Rc::new(DefaultMat),
+            mat: Arc::new(DefaultMat),
             t: 0.0,
             front_face: false,
         }
     }
 }
 
-pub trait Hittable {
+pub trait Hittable: Send + Sync {
     fn hit(&self, ray: &Ray, ray_t: &Interval, rec: &mut HitRecord) -> bool;
 }

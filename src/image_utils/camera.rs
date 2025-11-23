@@ -1,10 +1,12 @@
 use std::{
     fs::File,
     io::{BufWriter, Write},
+    sync::{Arc, Mutex},
 };
 
 use crate::{
     image_utils::{
+        camera::camera_handler::CameraHandler,
         colour::{Colour, write_colour},
         hittable::{HitRecord, Hittable},
         ray::Ray,
@@ -13,9 +15,12 @@ use crate::{
         interval::Interval,
         utils::{INFINITY, degrees_to_radians, random_f64},
         vec3::{Point3, Vec3},
-        vec3_ops::{cross, random_in_unit_disk, unit_vector},
+        vec3_ops::{cross, unit_vector},
     },
+    thread_pool::ThreadPool,
 };
+
+mod camera_handler;
 
 pub struct Camera {
     pub aspect_ratio: f64,
@@ -71,50 +76,66 @@ impl Camera {
         }
     }
 
-    pub fn render(&mut self, world: &impl Hittable) {
+    pub fn render(&mut self, world: Arc<impl Hittable + 'static>) {
         self.initialize();
 
-        let mut buffer = vec![0; (self.image_height as usize * self.image_width as usize + 3) * 3];
-        self.calculate_pixels(world, &mut buffer);
+        let buffer = vec![0; (self.image_height as usize * self.image_width as usize + 3) * 3];
+        let a_buf = Arc::new(Mutex::new(buffer));
+        self.calculate_pixels(world, a_buf.clone());
 
-        self.write_to_file(buffer);
+        self.write_to_file(a_buf);
     }
 
-    fn calculate_pixels(&mut self, world: &impl Hittable, buffer: &mut Vec<u8>) {
-        
+    fn calculate_pixels(&self, world: Arc<impl Hittable + 'static>, buffer: Arc<Mutex<Vec<u8>>>) {
+        let threads = ThreadPool::new(16);
+        let camera_handler = Arc::new(CameraHandler::from_camera(self));
         for j in 0..self.image_height {
-            log::debug!(
-                "Scanlines remaining: {}/{}",
-                self.image_height - j,
-                self.image_height
-            );
-            for i in 0..self.image_width {
-                let mut pixel_colour = Colour::default();
-                for _ in 0..self.samples_per_pixel {
-                    let ray = self.get_ray(i, j);
-                    pixel_colour += ray_color(&ray, self.max_depth, world);
-                }
-    
-                let b_h = j * self.image_width * 3;
-                let b_slice = b_h as usize + i as usize * 3;
-                let b_slice = &mut buffer[b_slice..b_slice + 3 * 3];
-                write_colour(&(pixel_colour * self.pixel_sample_scale), b_slice);
-            }
+            let b_clone = buffer.clone();
+            let world = world.clone();
+            let camera_handler = camera_handler.clone();
+            threads.execute(move || {
+                Self::calculate_row(b_clone, world, camera_handler, j);
+            });
         }
     }
 
-    fn write_to_file(&mut self, buffer: Vec<u8>) {
+    fn calculate_row(
+        buffer: Arc<Mutex<Vec<u8>>>,
+        world: Arc<impl Hittable>,
+        a_self: Arc<CameraHandler>,
+        j: u32,
+    ) {
+        log::debug!(
+            "Scanlines remaining: {}/{}",
+            a_self.image_height - j,
+            a_self.image_height
+        );
+        for i in 0..a_self.image_width {
+            let mut pixel_colour = Colour::default();
+            for _ in 0..a_self.samples_per_pixel {
+                let ray = a_self.get_ray(i, j);
+                pixel_colour += ray_color(&ray, a_self.max_depth, world.as_ref());
+            }
+
+            let b_h = j * a_self.image_width * 3;
+            let b_slice = b_h as usize + i as usize * 3;
+            let b_slice = &mut buffer.lock().unwrap()[b_slice..b_slice + 3 * 3];
+
+            write_colour(&(pixel_colour * a_self.pixel_sample_scale), b_slice);
+        }
+    }
+
+    fn write_to_file(&mut self, buffer: Arc<Mutex<Vec<u8>>>) {
         let file_name = "test_a.ppm";
         log::info!("Creating {file_name}");
         let file = File::create(file_name).expect("Could not write file");
         let mut file = BufWriter::new(file);
         file.write_all(format!("P6\n{} {}\n255\n", self.image_width, self.image_height).as_bytes())
             .expect("Could not write header");
-        file.write_all(buffer.as_slice())
+        file.write_all(buffer.lock().unwrap().as_slice())
             .expect("Could not write buffer to file");
     }
-    
-    
+
     fn initialize(&mut self) {
         self.image_height = if self.image_width as f64 > self.aspect_ratio {
             (self.image_width as f64 / self.aspect_ratio) as u32
@@ -151,29 +172,6 @@ impl Camera {
             self.focus_dist * f64::tan(degrees_to_radians(self.defocus_angle / 2.0));
         self.defocus_disk_u = self.u * defocus_radius;
         self.defocus_disk_v = self.v * defocus_radius;
-    }
-
-    /// Construct a camera ray originating from the defocus disk and derected at a randomly
-    /// sampled point around the pixel location i,j.
-    fn get_ray(&self, i: u32, j: u32) -> Ray {
-        let offset = sample_square();
-        let pixel_sample = self.pixel00_loc
-            + (self.pixel_delta_u * (i as f64 + offset.x()))
-            + (self.pixel_delta_v * (j as f64 + offset.y()));
-
-        let ray_origin = if self.defocus_angle <= 0.0 {
-            self.center
-        } else {
-            self.defocus_disk_sample()
-        };
-        let ray_direction = pixel_sample - ray_origin;
-
-        Ray::from(&ray_origin, &ray_direction)
-    }
-
-    fn defocus_disk_sample(&self) -> Point3 {
-        let p = random_in_unit_disk();
-        self.center + (p.e[0] * self.defocus_disk_u) + (p.e[1] * self.defocus_disk_v)
     }
 }
 
